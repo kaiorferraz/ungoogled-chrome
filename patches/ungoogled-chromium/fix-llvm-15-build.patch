@@ -1,0 +1,133 @@
+--- a/chrome/browser/apps/app_shim/app_shim_manager_mac.cc
++++ b/chrome/browser/apps/app_shim/app_shim_manager_mac.cc
+@@ -1553,24 +1553,24 @@ std::map<base::FilePath, int> AppShimMan
+   // URLs those profiles can handle.
+   std::map<base::FilePath, AppShimRegistry::HandlerInfo> handlers =
+       AppShimRegistry::Get()->GetHandlersForApp(params.app_id);
+-  for (const auto& [profile, handler_info] : handlers) {
++  for (const auto& handler : handlers) {
+     int count = base::ranges::count_if(
+-        files, [&handler_info](const base::FilePath& file_path) {
++        files, [&handler](const base::FilePath& file_path) {
+           std::string file_extension =
+               base::FilePath(file_path.Extension()).AsUTF8Unsafe();
+           return file_extension.length() > 1 &&
+-                 base::Contains(handler_info.file_handler_extensions,
++                 base::Contains(handler.second.file_handler_extensions,
+                                 file_extension);
+         });
+ 
+     if (protocol_handler_url.is_valid() &&
+-        base::Contains(handler_info.protocol_handlers,
++        base::Contains(handler.second.protocol_handlers,
+                        protocol_handler_url.scheme())) {
+       count++;
+     }
+ 
+     if (count > 0)
+-      result[profile] = count;
++      result[handler.first] = count;
+   }
+   return result;
+ }
+--- a/build/config/compiler/BUILD.gn
++++ b/build/config/compiler/BUILD.gn
+@@ -756,14 +756,6 @@ config("compiler") {
+       }
+ 
+       ldflags += [ "-Wl,-mllvm,-import-instr-limit=$import_instr_limit" ]
+-
+-      if (!is_chromeos) {
+-        # TODO(https://crbug.com/972449): turn on for ChromeOS when that
+-        # toolchain has this flag.
+-        # We only use one version of LLVM within a build so there's no need to
+-        # upgrade debug info, which can be expensive since it runs the verifier.
+-        ldflags += [ "-Wl,-mllvm,-disable-auto-upgrade-debug-info" ]
+-      }
+     }
+ 
+     # TODO(https://crbug.com/1211155): investigate why this isn't effective on
+@@ -814,10 +806,6 @@ config("compiler") {
+     ldflags += [ "-Wl,--undefined-version" ]
+   }
+ 
+-  if (use_lld && is_apple) {
+-    ldflags += [ "-Wl,--strict-auto-link" ]
+-  }
+-
+   # LLD does call-graph-sorted binary layout by default when profile data is
+   # present. On Android this increases binary size due to more thinks for long
+   # jumps. Turn it off by default and enable selectively for targets where it's
+--- a/ui/native_theme/native_theme_aura.cc
++++ b/ui/native_theme/native_theme_aura.cc
+@@ -117,7 +117,7 @@ SkColor4f NativeThemeAura::FocusRingColo
+ #if BUILDFLAG(IS_APPLE)
+   // On Mac OSX, the system Accent Color setting is darkened a bit
+   // for better contrast.
+-  return SkColor4f(base_color.fR, base_color.fG, base_color.fB, 166 / 255.0f);
++  return SkColor4f{base_color.fR, base_color.fG, base_color.fB, 166 / 255.0f};
+ #else
+   return base_color;
+ #endif  // BUILDFLAG(IS_APPLE)
+--- a/chrome/browser/signin/bound_session_credentials/bound_session_refresh_cookie_fetcher_impl.cc
++++ b/chrome/browser/signin/bound_session_credentials/bound_session_refresh_cookie_fetcher_impl.cc
+@@ -103,6 +103,6 @@ void BoundSessionRefreshCookieFetcherImp
+   net::Error net_error = static_cast<net::Error>(url_loader_->NetError());
+ 
+   std::move(callback_).Run(
+-      Result(net_error, headers ? absl::optional<int>(headers->response_code())
+-                                : absl::nullopt));
++      Result({net_error, headers ? absl::optional<int>(headers->response_code())
++                                : absl::nullopt}));
+ }
+--- a/chrome/test/chromedriver/capabilities.cc
++++ b/chrome/test/chromedriver/capabilities.cc
+@@ -355,7 +355,7 @@ Status ParseMobileEmulation(const base::
+                         "'version' field of type string");
+         }
+ 
+-        brands.emplace_back(*brand, *version);
++        brands.emplace_back(BrandVersion{*brand, *version});
+       }
+ 
+       client_hints.brands = std::move(brands);
+@@ -392,7 +392,7 @@ Status ParseMobileEmulation(const base::
+                         "a 'version' field of type string");
+         }
+ 
+-        full_version_list.emplace_back(*brand, *version);
++        full_version_list.emplace_back(BrandVersion{*brand, *version});
+       }
+ 
+       client_hints.full_version_list = std::move(full_version_list);
+--- a/third_party/blink/renderer/modules/canvas/canvas2d/canvas_style.cc
++++ b/third_party/blink/renderer/modules/canvas/canvas2d/canvas_style.cc
+@@ -91,12 +91,12 @@ void CanvasStyle::ApplyToFlags(cc::Paint
+     case kGradient:
+       GetCanvasGradient()->GetGradient()->ApplyToFlags(flags, SkMatrix::I(),
+                                                        ImageDrawOptions());
+-      flags.setColor(SkColor4f(0.0f, 0.0f, 0.0f, global_alpha));
++      flags.setColor(SkColor4f({0.0f, 0.0f, 0.0f, global_alpha}));
+       break;
+     case kImagePattern:
+       GetCanvasPattern()->GetPattern()->ApplyToFlags(
+           flags, AffineTransformToSkMatrix(GetCanvasPattern()->GetTransform()));
+-      flags.setColor(SkColor4f(0.0f, 0.0f, 0.0f, global_alpha));
++      flags.setColor(SkColor4f({0.0f, 0.0f, 0.0f, global_alpha}));
+       break;
+     default:
+       NOTREACHED();
+--- a/chrome/common/printing/printer_capabilities_mac.mm
++++ b/chrome/common/printing/printer_capabilities_mac.mm
+@@ -131,9 +131,9 @@ PrinterSemanticCapsAndDefaults::Papers G
+         ConvertUnit(printable_area_width, kPointsPerInch, kMicronsPerInch),
+         ConvertUnit(printable_area_height, kPointsPerInch, kMicronsPerInch));
+ 
+-    custom_paper_sizes.emplace_back(base::SysNSStringToUTF8(name),
++    custom_paper_sizes.emplace_back(PrinterSemanticCapsAndDefaults::Paper{base::SysNSStringToUTF8(name),
+                                     /*vendor_id=*/"", size_microns,
+-                                    printable_area_microns);
++                                    printable_area_microns});
+   }
+   std::sort(custom_paper_sizes.begin(), custom_paper_sizes.end(),
+             [](const PrinterSemanticCapsAndDefaults::Paper& a,
