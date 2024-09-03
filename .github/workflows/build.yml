@@ -100,7 +100,7 @@ jobs:
       - name: Run xcode-select
         run: sudo xcode-select --switch /Applications/Xcode_14.3.1.app
       - name: Download build
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
             name: github_build_artifact
       - name: Install dependencies
@@ -162,7 +162,7 @@ jobs:
       - name: Run xcode-select
         run: sudo xcode-select --switch /Applications/Xcode_14.3.1.app
       - name: Download resumed build
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
             name: github_build_artifact
       - name: Install dependencies
@@ -224,7 +224,7 @@ jobs:
       - name: Run xcode-select
         run: sudo xcode-select --switch /Applications/Xcode_14.3.1.app
       - name: Download resumed build
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
             name: github_build_artifact
       - name: Install dependencies
@@ -286,7 +286,7 @@ jobs:
       - name: Run xcode-select
         run: sudo xcode-select --switch /Applications/Xcode_14.3.1.app
       - name: Download resumed build
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
             name: github_build_artifact
       - name: Install dependencies
@@ -348,7 +348,7 @@ jobs:
       - name: Run xcode-select
         run: sudo xcode-select --switch /Applications/Xcode_14.3.1.app
       - name: Download resumed build
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
             name: github_build_artifact
       - name: Install dependencies
@@ -410,7 +410,7 @@ jobs:
       - name: Run xcode-select
         run: sudo xcode-select --switch /Applications/Xcode_14.3.1.app
       - name: Download resumed build
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
             name: github_build_artifact
       - name: Install dependencies
@@ -472,7 +472,7 @@ jobs:
       - name: Run xcode-select
         run: sudo xcode-select --switch /Applications/Xcode_14.3.1.app
       - name: Download resumed build
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
             name: github_build_artifact
       - name: Install dependencies
@@ -534,7 +534,7 @@ jobs:
       - name: Run xcode-select
         run: sudo xcode-select --switch /Applications/Xcode_14.3.1.app
       - name: Download resumed build
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
             name: github_build_artifact
       - name: Install dependencies
